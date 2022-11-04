@@ -5,6 +5,7 @@ import numpy as np
 import cv2
 import os
 
+temp_path = "temp"
 letters = {
         1:"A",
         2:"B",
@@ -38,12 +39,15 @@ labelNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 labelNames += "abcdefghijklmnopqrstuvwxyz"
 labelNames = [l for l in labelNames]
 
+if os.path.exists(temp_path) is False:
+		os.makedirs(temp_path)
+
 for letter_index in letters:
     letter = letters[letter_index]
 
     print("current letter: " + letter)
 
-    filepath = "temp/"+letter+"/upper_lower.csv"
+    filepath = temp_path+"/"+letter+"/upper_lower.csv"
     (data, labels) = manipulator.load_az_dataset(datasetPath=filepath, flipped=True)
 
     # each image in the A-Z and MNIST digts datasets are 28x28 pixels;
@@ -65,7 +69,7 @@ for letter_index in letters:
         image = cv2.merge([image] * 3)
         image = cv2.resize(image, (32, 32), interpolation=cv2.INTER_LINEAR)
 
-        filepath = "temp/"+ letter + "/"
+        filepath = temp_path+"/"+ letter + "/"
 
         guess_letter_index = labels[index]
         guess = labelNames[guess_letter_index - 1]

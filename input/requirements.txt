@@ -1,0 +1,1 @@
+you can only load .csv files from the EMNIST dataset into the program

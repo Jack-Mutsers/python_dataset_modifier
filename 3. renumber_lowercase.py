@@ -1,6 +1,7 @@
 import helpers.csv_manipulator as manipulator
 from glob import glob
 import random
+import os
 
 new_filename = "emnist-letters-train-lowercase.csv"
 shuffle = True
@@ -73,15 +74,53 @@ def find_missing_indexes(remaining_index_numbers, total_rows):
     
     return missing_indexes
 
+def move_transfer_items(collection):
+    for index in letters:
+        letter = letters[index]
+        print(letter)
+
+        path = "temp/"+letter+"/transfer/"
+
+        if os.path.exists(path) is False:
+            continue
+        
+        lowercase_files = glob(path+'*/*/*.png')
+        for filepath in lowercase_files:
+            target_letter = filepath.split("\\")[-3]
+            upper_lower = filepath.split("\\")[-2]
+
+            record_index = filepath.split("\\")[-1]
+            record_index = int(record_index.split(".")[0])
+
+            record = collection[letter][record_index]
+
+            # get index of target letter
+            new_label = list(letters.values()).index(target_letter) + 1
+
+            # if image is lowecase raise lable value by 26
+            if upper_lower == "lowercase":
+                new_label += 26
+
+            # update label value of record
+            record[0] = str(new_label)
+
+            # overwrite existing record in list with updated record
+            collection[letter][record_index] = record
+    
+    return collection
+
+
 def remove_bad_records(collection):
     total = 0
     for index in letters:
         letter = letters[index]
         print(letter)
 
-        path = "temp/"+letter+"/*/"
-        files = glob(path+'*.png')
-        
+        path = "temp/"+letter+"/"
+        upper_lower_files = glob(path+'*/*.png')
+        transfer_files = glob(path+'*/*/*/*.png')
+        files = upper_lower_files + transfer_files
+
         remaining_index_numbers = retreve_indexes(files)
         missing_indexes = find_missing_indexes(remaining_index_numbers, len(collection[letter]))
 
@@ -118,6 +157,7 @@ def merge_letter_lists(collection):
 collection = update_lowercase_labels()
 
 if remove_records:
+    collection = move_transfer_items(collection)
     updated_collection = remove_bad_records(collection)
     updated_row_list = merge_letter_lists(updated_collection)
 else:

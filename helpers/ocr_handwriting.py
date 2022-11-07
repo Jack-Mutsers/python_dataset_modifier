@@ -2,7 +2,8 @@
 from keras.models import load_model
 import argparse
 
-model_path = r"models/handwriting-lowercase.model"
+model_path = r"models/handwriting-lowercase-5-11-2022.model"
+# model_path = r"models/handwriting-lowercase.model"
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()

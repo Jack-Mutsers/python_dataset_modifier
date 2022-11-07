@@ -1,54 +1,40 @@
 import helpers.csv_manipulator as manipulator
 
-filename = "emnist-letters-train-lowercase.csv"
+# filename = "emnist-letters-train-lowercase.csv"
+filename = "emnist-byclass-train.csv"
+label_offset = 0 # this is the ammount that the label value has to be raised to match the correct value for my model
+
+labelNames = "0123456789"
+labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+labelNames += "abcdefghijklmnopqrstuvwxyz"
+labelNames = [l for l in labelNames]
 
 def split_by_letter(row_list):
-    letters = {
-        1:"A",
-        2:"B",
-        3:"C",
-        4:"D",
-        5:"E",
-        6:"F",
-        7:"G",
-        8:"H",
-        9:"I",
-        10:"J",
-        11:"K",
-        12:"L",
-        13:"M",
-        14:"N",
-        15:"O",
-        16:"P",
-        17:"Q",
-        18:"R",
-        19:"S",
-        20:"T",
-        21:"U",
-        22:"V",
-        23:"W",
-        24:"X",
-        25:"Y",
-        26:"Z",
-    }
-
+    print("split different characters")
     collection = {}
     
-    for letter in letters:
-        collection[letters[letter]] = []
+    for character in labelNames:
+        character_index = labelNames.index(character)
+        if character_index > 35:
+            break
+        
+        print("current character: " + character)
+
+        collection[character] = []
 
     for row in row_list:
-        index = int(row[0])
-        if index > 26:
+        index = int(row[0]) + label_offset
+        row[0] = str(index)
+        if index > 35:
             index = index - 26
-        letter = letters[index]
-        collection[letter] += [row]
+        character = labelNames[index]
+        collection[character] += [row]
     
     return collection
 
 row_list = manipulator.read_csv(filename)
 collection = split_by_letter(row_list)
 
-for letter in collection:
-    filepath = "temp\\"+letter
-    manipulator.write_csv("upper_lower.csv", collection[letter], filepath)
+for character in collection:
+    filepath = "temp\\"+character
+    manipulator.write_csv("upper_lower.csv", collection[character], filepath)

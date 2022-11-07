@@ -90,7 +90,7 @@ def move_transfer_items(collection):
             upper_lower = filepath.split("\\")[-2]
 
             record_index = filepath.split("\\")[-1]
-            record_index = int(record_index.split(".")[0])
+            record_index = int(record_index.split(".")[0]) - 1
 
             record = collection[letter][record_index]
 
@@ -118,7 +118,7 @@ def remove_bad_records(collection):
 
         path = "temp/"+letter+"/"
         upper_lower_files = glob(path+'*/*.png')
-        transfer_files = glob(path+'*/*/*/*.png')
+        transfer_files = glob(path+'transfer/*/*/*.png')
         files = upper_lower_files + transfer_files
 
         remaining_index_numbers = retreve_indexes(files)

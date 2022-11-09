@@ -1,6 +1,6 @@
 
 import tkinter as tk
-from tkinter import Tk, Button, Checkbutton, IntVar, ttk, NORMAL, DISABLED
+from tkinter import Tk, Button, Checkbutton, IntVar, ttk, NORMAL
 from PIL import ImageTk, Image
 from glob import glob
 import os
@@ -58,28 +58,21 @@ def next_selection():
         root.destroy()
         root = None
 
-def checkRow(tab_index, x, y):
-    global image_array, boxes
-
-    row = image_array[tab_index][x]
-    deselected = []
-
-    # Loop through row that was changed, check which items were not selected 
-    # (so that we know which indeces to disable in the event that 2 have been selected)
-
-    for j in range(len(row)):
-        if row[j]["var"].get() == 0:
-            deselected.append(j)
+def checkRow(x, y):
+    global image_array, boxes, tabControl
+    tab = tabControl.index("current")
 
     # Check if enough buttons have been selected. If so, disable the deselected indeces,
     # Otherwise set all of them to active (in case we have previously disabled them).
-
-    if len(deselected) == (len(row)):
-        for j in deselected:
-            boxes[tab_index][x][j].config(state = DISABLED)
-    else:
-        for item in boxes[tab_index][x]:
-            item.config(state = NORMAL)
+    index = 0
+    for item in boxes[tab][x]:
+        item.config(state = NORMAL)
+        if (image_array[tab][x][index]["var"].get() == 1):
+            item.config(background="red")
+        else:
+            item.config(background="grey")
+        
+        index+=1
 
 def remove_selected_files():
     global to_delete
@@ -111,10 +104,12 @@ def scanFolder(folder_names, search_dir):
         max_images_per_session = 2500
         session_groups = [image_paths[x:x+max_images_per_session] for x in range(0, len(image_paths), max_images_per_session)]
 
+        session = 0
         for session_group in session_groups:
             loading = True
+            session += 1
 
-            root.title(folder_path)
+            root.title(folder_path + " - " + str(session) + "/" + str(len(session_groups)))
             root["bg"]='grey'
 
             tabControl = ttk.Notebook(root, width=colls*65)
@@ -163,10 +158,13 @@ def scanFolder(folder_names, search_dir):
                     image_group = image_array[tab_count][x]
                     boxes[tab_count].append([])
                     for y in range(len(image_group)):
-                        var = image_group[y]["var"]
-                        image = image_group[y]["image"]
-                        command = lambda x = x: checkRow(tab_count, x, y)
-                        boxes[tab_count][x].append(Checkbutton(tab, variable = var, image = image, command = command, background="grey"))
+                        btn = Checkbutton(tab)
+                        btn.config(variable = image_group[y]["var"])
+                        btn.config(image = image_group[y]["image"])
+                        btn.config(background="grey")
+                        btn.config(command = lambda x = x: checkRow(x, y))
+
+                        boxes[tab_count][x].append(btn)
                         boxes[tab_count][x][y].grid(row=x+1, column=y+1)
 
                 tab_count += 1
@@ -184,8 +182,6 @@ def scanFolder(folder_names, search_dir):
             
             # delete selected images
             remove_selected_files()
-
-
 
 
 for character in labelNames:

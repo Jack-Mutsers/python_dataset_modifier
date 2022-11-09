@@ -94,13 +94,13 @@ def scanFolder(folder_names, search_dir):
     global image_array, boxes, loading, root, tabControl
 
     for folder_name in folder_names:
-        folder_path = search_dir + folder_name
+        folder_path = search_dir + folder_name + "/"
 
         sub_folder_names = [name for name in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, name))]
         if len(sub_folder_names) > 0:
             scanFolder(sub_folder_names, folder_path)
         
-        image_paths = glob(folder_path+"/*.png")
+        image_paths = glob(folder_path+"*.png")
         max_images_per_session = 2500
         session_groups = [image_paths[x:x+max_images_per_session] for x in range(0, len(image_paths), max_images_per_session)]
 
@@ -188,7 +188,7 @@ for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("C"):
+    if character_index < labelNames.index("E"):
         continue
 
     # stop looping when numbers and all letters have been ran

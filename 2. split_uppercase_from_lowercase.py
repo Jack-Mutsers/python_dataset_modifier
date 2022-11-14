@@ -35,6 +35,8 @@ for character in labelNames:
     filepath = temp_path+"/"+character+"/upper_lower.csv"
     (data, labels) = manipulator.load_az_dataset(datasetPath=filepath, flipped=flip_invert_images)
 
+    character_size = len(str(labels.size))
+
     # each image in the A-Z and MNIST digts datasets are 28x28 pixels;
     # however, the architecture we're using is designed for 32x32 images,
     # so we need to resize them to 32x32
@@ -73,14 +75,19 @@ for character in labelNames:
         elif guess_letter_index > labelNames.index("Z") and (labelNames[guess_letter_index - 26]) == character:
             filepath += "lowercase/"
         else:
+            filepath += "unknown/"
+
+        # seperate guessed letter with lable description in case of misguessed/mislabeled characters
+        if (num_unique_values == 1 and guess_letter_index > 9) or force_guess == True:
             if expected_letter_index > labelNames.index("Z"):
-                filepath += "unkown/lowercase/"
+                filepath += "labeled_lowercase/"
             else:
-                filepath += "unkown/uppercase/"
+                filepath += "labeled_uppercase/"
 
         if os.path.exists(filepath) is False:
             os.makedirs(filepath)
 
-        index += 1
-        filename = filepath + str(index) + ".png"
+        newname = str(index).zfill(character_size)
+        filename = filepath + newname + ".png"
         cv2.imwrite(filename, image)
+        index += 1

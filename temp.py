@@ -11,45 +11,44 @@ labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 labelNames += "abcdefghijklmnopqrstuvwxyz"
 labelNames = [l for l in labelNames]
 
-if os.path.exists(temp_path) is False:
-		os.makedirs(temp_path)
-
 for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("A"):
+    if character_index < labelNames.index("M"):
         continue
 
     # stop looping when numbers and all letters have been ran
-    if character_index > labelNames.index("L"):
+    if character_index > labelNames.index("Z"):
         break
 
-    print("current character: " + character)
+    path = "temp/"+character+"/"
 
-    character_index = labelNames.index(character)
+    folder_names = [name for name in os.listdir(path) if os.path.isdir(os.path.join(path, name))]
 
-    row_list = manipulator.read_csv("/upper_lower.csv", temp_path+"/"+character)
+    csv = manipulator.read_csv("upper_lower.csv", path)
+    character_size = len(str(len(csv)))
 
-    unknown_images = glob(temp_path+"/"+character+"/unkown/*.png")
+    for folder_name in folder_names:
+        images = glob(path + folder_name + "/*.png")
 
-    for image_path in unknown_images:
-        filename = image_path.split("\\")[-1]
-        image_index = int(filename.split(".")[0]) - 1
+        for image_path in images:
+            current_path = "\\".join(image_path.split("\\")[:-1]) + "\\"
+            filename = image_path.split("\\")[-1]
+            index = int(filename.split(".")[0])
 
-        row = row_list[image_index]
+            newname = str(index).zfill(character_size)
+            newname = filename.replace(str(index), newname)
 
-        copy_path = temp_path+"/"+ character + "/"
+            record = csv[index-1]
+            label = int(record[0])
 
-        expected_letter_index = int(row[0])
-        letter = labelNames[expected_letter_index]
-        if expected_letter_index > labelNames.index("Z"):
-            copy_path += "unkown/lowercase/"
-        else:
-            copy_path += "unkown/uppercase/"
+            if label > labelNames.index("Z"):
+                move_path = current_path + "labeled_lowercase\\"
+            else:
+                move_path = current_path + "labeled_uppercase\\"
 
-        if os.path.exists(copy_path) is False:
-            os.makedirs(copy_path)
+            if os.path.exists(move_path) is False:
+                os.mkdir(move_path)
 
-        # copy file to new directory
-        shutil.move(image_path, copy_path)
+            shutil.move(image_path, move_path + newname)

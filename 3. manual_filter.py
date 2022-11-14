@@ -5,6 +5,7 @@ from PIL import ImageTk, Image
 from glob import glob
 import os
 import math
+import shutil
 
 rows = 10
 colls = 10
@@ -15,6 +16,31 @@ to_delete = []
 loading = True
 root = Tk()
 tabControl = None
+delete_path = ""
+
+special_bg = None
+special_colored = [
+    {"x": 2, "y": 2},
+    {"x": 2, "y": 3},
+    {"x": 2, "y": 4},
+    {"x": 2, "y": 5},
+    {"x": 2, "y": 6},
+    {"x": 2, "y": 7},
+    {"x": 3, "y": 7},
+    {"x": 4, "y": 7},
+    {"x": 5, "y": 7},
+    {"x": 6, "y": 7},
+    {"x": 7, "y": 7},
+    {"x": 7, "y": 6},
+    {"x": 7, "y": 5},
+    {"x": 7, "y": 4},
+    {"x": 7, "y": 3},
+    {"x": 7, "y": 2},
+    {"x": 6, "y": 2},
+    {"x": 5, "y": 2},
+    {"x": 4, "y": 2},
+    {"x": 3, "y": 2},
+]
 
 labelNames = "0123456789"
 labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -58,30 +84,39 @@ def next_selection():
         root.destroy()
         root = None
 
-def checkRow(x, y):
+def checkRow(y):
     global image_array, boxes, tabControl
     tab = tabControl.index("current")
 
     # Check if enough buttons have been selected. If so, disable the deselected indeces,
     # Otherwise set all of them to active (in case we have previously disabled them).
     index = 0
-    for item in boxes[tab][x]:
+    for item in boxes[tab][y]:
         item.config(state = NORMAL)
-        if (image_array[tab][x][index]["var"].get() == 1):
+        if (image_array[tab][y][index]["var"].get() == 1):
             item.config(background="red")
         else:
-            item.config(background="grey")
+            if {"x": index, "y": y} in special_colored:
+                item.config(background=special_bg)
+            else:
+                item.config(background="grey")
         
         index+=1
 
 def remove_selected_files():
-    global to_delete
+    global to_delete, delete_path
     if len(to_delete) < 1:
         return
 
     print(to_delete)
     for filepath in to_delete:
-        os.remove(filepath)
+        # os.remove(filepath)
+        filename = filepath.split("\\")[-1]
+
+        if os.path.exists(delete_path) is False:
+            os.mkdir(delete_path)
+
+        shutil.move(filepath, delete_path + filename)
 
     to_delete = []
 
@@ -90,16 +125,24 @@ def close_program():
     remove_selected_files()
     exit()
 
+def _from_rgb(rgb):
+    """translates an rgb tuple of int to a tkinter friendly color code
+    """
+    return "#%02x%02x%02x" % rgb 
+
 def scanFolder(folder_names, search_dir):
     global image_array, boxes, loading, root, tabControl
 
     for folder_name in folder_names:
+        if folder_name == "delete":
+            continue
+
         folder_path = search_dir + folder_name + "/"
 
         sub_folder_names = [name for name in os.listdir(folder_path) if os.path.isdir(os.path.join(folder_path, name))]
         if len(sub_folder_names) > 0:
             scanFolder(sub_folder_names, folder_path)
-        
+
         image_paths = glob(folder_path+"*.png")
         max_images_per_session = 2500
         session_groups = [image_paths[x:x+max_images_per_session] for x in range(0, len(image_paths), max_images_per_session)]
@@ -161,8 +204,17 @@ def scanFolder(folder_names, search_dir):
                         btn = Checkbutton(tab)
                         btn.config(variable = image_group[y]["var"])
                         btn.config(image = image_group[y]["image"])
-                        btn.config(background="grey")
-                        btn.config(command = lambda x = x: checkRow(x, y))
+                        imagefile = image_group[y]["path"].split("\\")[-1]
+                        imagename = imagefile.split(".")[0]
+                        btn.config(text = imagename)
+                        btn.config(compound= "top")
+
+                        if {"x": x, "y": y} in special_colored:
+                            btn.config(background=special_bg)
+                        else:
+                            btn.config(background="grey")
+
+                        btn.config(command = lambda x = x: checkRow(x))
 
                         boxes[tab_count][x].append(btn)
                         boxes[tab_count][x][y].grid(row=x+1, column=y+1)
@@ -184,11 +236,12 @@ def scanFolder(folder_names, search_dir):
             remove_selected_files()
 
 
+special_bg = _from_rgb((0,80,80))
 for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("E"):
+    if character_index < labelNames.index("N"):
         continue
 
     # stop looping when numbers and all letters have been ran
@@ -197,6 +250,8 @@ for character in labelNames:
 
     search_dir = "temp/"+character+"/"
     folder_names = [name for name in os.listdir(search_dir) if os.path.isdir(os.path.join(search_dir, name))]
+
+    delete_path = search_dir + "delete/"
 
     scanFolder(folder_names, search_dir)
 

@@ -5,6 +5,7 @@ from PIL import ImageTk, Image
 from glob import glob
 import os
 import math
+import tkcap
 import shutil
 
 rows = 10
@@ -16,7 +17,10 @@ to_delete = []
 loading = True
 root = Tk()
 tabControl = None
-delete_path = ""
+currentLetter = ""
+cap = tkcap.CAP(root)     # master is an instance of tkinter.Tk
+titleName = ""
+categories = ["lowercase", "unknown", "uppercase", "number"]
 
 special_bg = None
 special_colored = [
@@ -71,18 +75,38 @@ def getSelected():
         for j in range(len(image_array[tab][i])):
             if image_array[tab][i][j]["var"].get() == 1:
                 if image_array[tab][i][j]["path"] not in to_delete:
-                    to_delete.append(image_array[tab][i][j]["path"])
+                    delete_path = image_array[tab][i][j]["path"]
+                    # print(delete_path)
+                    to_delete.append(delete_path)
 
 def next_selection():
     global root, loading, tabControl
     t = tabControl.index("current")
     getSelected()
 
+    # take screenshot of window for delete evaluation to verify the correct images were removed
+    take_screenshot_of_window(str(t+1))
+
     if loading == False and len(tabControl.children) > t+1:
         tabControl.select(t+1)
     elif loading == False:
         root.destroy()
         root = None
+
+def take_screenshot_of_window(tab_number):
+    global cap, titleName, categories, currentLetter
+
+    fileName = titleName.replace("/", "_").replace(" ", "") + "-tab_" + tab_number + ".png"
+    delete_path = "/".join(titleName.split("/")[:-2])
+    delete_path = delete_path.replace(currentLetter, currentLetter + "/delete") + "/"
+
+    if os.path.exists(delete_path) is False:
+        os.mkdir(delete_path)
+
+    filepath = delete_path + "." + fileName
+
+    image_exists = os.path.isfile(filepath)
+    cap.capture(filepath, image_exists)       # Capture and Save the screenshot of the tkiner window
 
 def checkRow(y):
     global image_array, boxes, tabControl
@@ -104,7 +128,7 @@ def checkRow(y):
         index+=1
 
 def remove_selected_files():
-    global to_delete, delete_path
+    global to_delete, currentLetter
     if len(to_delete) < 1:
         return
 
@@ -112,6 +136,8 @@ def remove_selected_files():
     for filepath in to_delete:
         # os.remove(filepath)
         filename = filepath.split("\\")[-1]
+        path = "\\".join(filepath.split("\\")[:-1])
+        delete_path = path.replace(currentLetter, currentLetter + "\\delete") + "\\"
 
         if os.path.exists(delete_path) is False:
             os.mkdir(delete_path)
@@ -131,7 +157,7 @@ def _from_rgb(rgb):
     return "#%02x%02x%02x" % rgb 
 
 def scanFolder(folder_names, search_dir):
-    global image_array, boxes, loading, root, tabControl
+    global image_array, boxes, loading, root, tabControl, cap, titleName
 
     for folder_name in folder_names:
         if folder_name == "delete":
@@ -152,7 +178,8 @@ def scanFolder(folder_names, search_dir):
             loading = True
             session += 1
 
-            root.title(folder_path + " - " + str(session) + "/" + str(len(session_groups)))
+            titleName = folder_path + " - " + str(session) + "/" + str(len(session_groups))
+            root.title(titleName)
             root["bg"]='grey'
 
             tabControl = ttk.Notebook(root, width=colls*65)
@@ -228,20 +255,37 @@ def scanFolder(folder_names, search_dir):
             # unset variables
             tabControl = None
             root = None
+            cap = None
 
             # reset tkinter window
             root = Tk()
-            
+            cap = tkcap.CAP(root)     # master is an instance of tkinter.Tk
+
             # delete selected images
             remove_selected_files()
 
+def create_delete_folders(delete_path, character_index):
+    global categories, labelNames
+
+    if os.path.exists(delete_path) is False:
+        os.mkdir(delete_path)
+
+    for category in categories:
+        if character_index < labelNames.index("A") and category != categories[-1]:
+            continue
+        elif character_index > labelNames.index("9") and category == categories[-1]:
+            continue
+
+        if os.path.exists(delete_path + category) is False:
+                os.mkdir(delete_path + category)
 
 special_bg = _from_rgb((0,80,80))
 for character in labelNames:
     character_index = labelNames.index(character)
+    currentLetter = character
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("N"):
+    if character_index < labelNames.index("P"):
         continue
 
     # stop looping when numbers and all letters have been ran
@@ -251,7 +295,7 @@ for character in labelNames:
     search_dir = "temp/"+character+"/"
     folder_names = [name for name in os.listdir(search_dir) if os.path.isdir(os.path.join(search_dir, name))]
 
-    delete_path = search_dir + "delete/"
+    create_delete_folders(search_dir + "delete" + "/", character_index)
 
     scanFolder(folder_names, search_dir)
 

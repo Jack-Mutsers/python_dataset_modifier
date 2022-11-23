@@ -93,6 +93,10 @@ def next_selection():
         root.destroy()
         root = None
 
+def premeture_delete():
+    getSelected()
+    remove_selected_files()
+
 def take_screenshot_of_window(tab_number):
     global cap, titleName, categories, currentLetter
 
@@ -189,12 +193,15 @@ def scanFolder(folder_names, search_dir):
             s.theme_use('default')
             s.configure('TNotebook.Tab', background="grey")
 
-            colspan = math.floor(colls/2)
+            colspan = math.floor(colls/3)
             b1 = Button(root, text = "Close", command = close_program, width = 15)
             b1.grid(row=3, column=1, columnspan=colspan)
 
-            b2 = Button(root, text = "Next", command = next_selection, width = 15)
+            b2 = Button(root, text = "Delete selection", command = premeture_delete, width = 15, background="darkred", foreground="white")
             b2.grid(row=3, column=colspan+1, columnspan=colspan)
+
+            b3 = Button(root, text = "Next", command = next_selection, width = 15)
+            b3.grid(row=3, column=(colspan*2)+1, columnspan=colspan)
             
             image_path_groups = [session_group[x:x+total_images] for x in range(0, len(session_group), total_images)]
 
@@ -285,7 +292,7 @@ for character in labelNames:
     currentLetter = character
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("P"):
+    if character_index < labelNames.index("S"):
         continue
 
     # stop looping when numbers and all letters have been ran

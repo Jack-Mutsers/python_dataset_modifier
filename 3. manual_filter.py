@@ -77,7 +77,10 @@ def getSelected():
                 if image_array[tab][i][j]["path"] not in to_delete:
                     delete_path = image_array[tab][i][j]["path"]
                     # print(delete_path)
-                    to_delete.append(delete_path)
+
+                    # check if file exists
+                    if os.path.isfile(delete_path):
+                        to_delete.append(delete_path)
 
 def next_selection():
     global root, loading, tabControl
@@ -138,6 +141,10 @@ def remove_selected_files():
 
     print(to_delete)
     for filepath in to_delete:
+        # skip if file has been deleted already
+        if os.path.isfile(filepath) == False:
+            continue
+
         # os.remove(filepath)
         filename = filepath.split("\\")[-1]
         path = "\\".join(filepath.split("\\")[:-1])

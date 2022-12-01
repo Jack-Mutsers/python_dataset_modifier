@@ -1,5 +1,7 @@
 import random
-import helpers.csv_manipulator as manipulator
+from .. import helpers
+
+manipulator = helpers.csv_manipulator
 
 # filename = "emnist-byclass-train.csv"
 filename = "emnist-byclass-train.csv"

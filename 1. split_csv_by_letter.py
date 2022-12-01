@@ -1,7 +1,7 @@
 import helpers.csv_manipulator as manipulator
 
 # filename = "emnist-letters-train-lowercase.csv"
-filename = "emnist-byclass-train.csv"
+filename = "emnist-byclass-train-test.csv"
 label_offset = 0 # this is the ammount that the label value has to be raised to match the correct value for my model
 
 labelNames = "0123456789"
@@ -15,7 +15,7 @@ def split_by_letter(row_list):
     
     for character in labelNames:
         character_index = labelNames.index(character)
-        if character_index > 35:
+        if character_index > labelNames.index("Z"):
             break
         
         print("current character: " + character)

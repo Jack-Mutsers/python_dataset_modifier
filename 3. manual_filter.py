@@ -278,7 +278,7 @@ def scanFolder(folder_names, search_dir):
             # delete selected images
             remove_selected_files()
 
-def create_delete_folders(delete_path, character_index):
+def create_delete_folders(delete_path, character_index, unknown_path = False):
     global categories, labelNames
 
     if os.path.exists(delete_path) is False:
@@ -289,9 +289,15 @@ def create_delete_folders(delete_path, character_index):
             continue
         elif character_index > labelNames.index("9") and category == categories[-1]:
             continue
+        if unknown_path and category == categories[1]:
+            continue
 
-        if os.path.exists(delete_path + category) is False:
-                os.mkdir(delete_path + category)
+        fullpath = delete_path + category + "/"
+        if os.path.exists(fullpath) is False:
+            os.mkdir(fullpath)
+            if category == categories[1]:
+                create_delete_folders(fullpath, character_index, unknown_path=True)
+
 
 special_bg = _from_rgb((0,80,80))
 for character in labelNames:
@@ -299,7 +305,7 @@ for character in labelNames:
     currentLetter = character
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("S"):
+    if character_index < labelNames.index("U"):
         continue
 
     # stop looping when numbers and all letters have been ran

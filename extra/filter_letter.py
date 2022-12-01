@@ -1,21 +1,58 @@
 import helpers.csv_manipulator as manipulator
 from glob import glob
-import random
+import shutil
 import os
 
-new_filename = "emnist-byclass-train-trimmed.csv"
+new_filename = "emnist-byclass-train-test.csv"
 shuffle = True
 remove_records = True
-start_character = "0"
+start_character = "V"
 end_character = "Z"
-
+deleted_records = {
+    "0": [],
+    "1": [],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": [],
+    "6": [],
+    "7": [],
+    "8": [],
+    "9": [],
+    "A": [],
+    "B": [],
+    "C": [],
+    "D": [],
+    "E": [],
+    "F": [],
+    "G": [],
+    "H": [],
+    "I": [],
+    "J": [],
+    "K": [],
+    "L": [],
+    "M": [],
+    "N": [],
+    "O": [],
+    "P": [],
+    "Q": [],
+    "R": [],
+    "S": [],
+    "T": [],
+    "U": [],
+    "V": [],
+    "W": [],
+    "X": [],
+    "Y": [],
+    "Z": [],
+}
 
 labelNames = "0123456789"
 labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 labelNames += "abcdefghijklmnopqrstuvwxyz"
 labelNames = [l for l in labelNames]
 
-def retreve_records():
+def retreve_records(csv_filename):
     collection = {}
     for character in labelNames:
         character_index = labelNames.index(character)
@@ -30,10 +67,9 @@ def retreve_records():
 
         print(character)
 
-        records = manipulator.read_csv(filename="upper_lower.csv", filepath="temp/"+character+"/")
+        collection[character] = manipulator.read_csv(filename=csv_filename, filepath="temp/"+character+"/")
+        deleted_records[character] = manipulator.read_csv(filename="deleted.csv", filepath="temp/"+character+"/")
 
-        collection[character] = records.copy()
-    
     return collection
 
 def retreve_indexes(files):
@@ -84,7 +120,7 @@ def move_transfer_items(collection):
             record = collection[currentLetter][record_index]
 
             # get index of target letter
-            new_label = labelNames.index(target_letter)
+            new_label = list(labelNames.values()).index(target_letter)
 
             # if image is lowecase raise lable value by 26
             if upper_lower == "lowercase" and new_label <= labelNames.index("Z"):
@@ -163,7 +199,10 @@ def remove_bad_records(collection):
         print(currentLetter)
 
         path = "temp/"+currentLetter+"/"
-        upper_lower_files = glob(path+'*/*.png')
+        upper_lower_files = glob(path+'lowercase/*.png')
+        upper_lower_files += glob(path+'lowercase/*/*.png')
+        upper_lower_files += glob(path+'uppercase/*.png')
+        upper_lower_files += glob(path+'uppercase/*/*.png')
         transfer_files = glob(path+'transfer/*/*/*.png')
         files = upper_lower_files + transfer_files
 
@@ -176,6 +215,7 @@ def remove_bad_records(collection):
         before = len(collection[currentLetter])
 
         for remove_index in missing_indexes:
+            deleted_records[currentLetter].append(collection[currentLetter][remove_index])
             del collection[currentLetter][remove_index]
 
         after = len(collection[currentLetter])
@@ -190,26 +230,33 @@ def remove_bad_records(collection):
     print("total removed: " + str(total))
     return collection
 
-def merge_letter_lists(collection):
-    merged_list = []
-    for character in collection:
-        merged_list += collection[character]
+def remove_folders(character):
+    search_dir = "temp/"+character+"/"
+    folder_names = [name for name in os.listdir(search_dir) if os.path.isdir(os.path.join(search_dir, name))]
 
-    for i in range(10):
-        random.shuffle(merged_list)
+    for folder_name in folder_names:
+        shutil.rmtree(search_dir + folder_name)
 
-    return merged_list
+def run(csv_filename = "upper_lower.csv", new_csv_filename = "upper_lower.csv"):
+    collection = retreve_records(csv_filename)
+    relabled_collection = update_labels(collection)
 
-collection = retreve_records()
-relabled_collection = update_labels(collection)
-
-if remove_records:
     restructured_collection = move_transfer_items(relabled_collection)
     filtered_collection = remove_bad_records(restructured_collection)
-    updated_row_list = merge_letter_lists(filtered_collection)
-else:
-    updated_row_list = merge_letter_lists(collection)
 
-print("writing new CSV file")
-manipulator.write_csv(new_filename, updated_row_list)
-print("CSV file was created")
+    for character in labelNames:
+        character_index = labelNames.index(character)
+
+        # skip characters until desired character is reached
+        if character_index < labelNames.index(start_character):
+            continue
+
+        # stop looping when numbers and all letters have been ran
+        if character_index > labelNames.index(end_character):
+            break
+
+        manipulator.write_csv(filename=new_csv_filename, row_list=filtered_collection[character], filepath="temp/"+character+"/")
+        manipulator.write_csv(filename="deleted.csv", row_list=deleted_records[character], filepath="temp/"+character+"/")
+        remove_folders(character)
+
+# run()

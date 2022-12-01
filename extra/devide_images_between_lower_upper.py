@@ -1,5 +1,4 @@
 
-import helpers.csv_manipulator as manipulator
 import random
 import math
 import shutil
@@ -16,11 +15,11 @@ for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("O"):
+    if character_index < labelNames.index("Z"):
         continue
 
     # stop looping when numbers and all letters have been ran
-    if character_index > labelNames.index("O"):
+    if character_index > labelNames.index("Z"):
         break
 
     path = "temp/"+character+"/"

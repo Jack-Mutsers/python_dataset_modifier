@@ -5,6 +5,10 @@ import numpy as np
 def read_csv(filename, filepath = "input/"):
 	filepath = filepath + filename
 	row_list = []
+
+	if os.path.isfile(filepath) == False:
+		return row_list
+
 	with open(filepath, mode='r') as csv_file:
 		csv_reader = csv.reader(csv_file)
 		row_count = 0

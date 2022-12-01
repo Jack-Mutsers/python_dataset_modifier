@@ -1,14 +1,13 @@
 
-from helpers import csv_manipulator as manipulator
-from helpers import ocr_handwriting as reader
+import helpers.csv_manipulator as manipulator
+import helpers.ocr_handwriting as reader
 import numpy as np
 import cv2
 import os
 
 temp_path = "temp"
 flip_invert_images = True
-force_guess = True
-model_path = r"models/handwriting-lowercase-5-11-2022.model"
+force_guess = False
 
 labelNames = "0123456789"
 labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -16,15 +15,13 @@ labelNames += "abcdefghijklmnopqrstuvwxyz"
 labelNames = [l for l in labelNames]
 
 if os.path.exists(temp_path) is False:
-    os.makedirs(temp_path)
-
-reader.set_model(model_path)
+		os.makedirs(temp_path)
 
 for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("0"):
+    if character_index < labelNames.index("V"):
         continue
 
     # stop looping when numbers and all letters have been ran
@@ -35,7 +32,7 @@ for character in labelNames:
 
     character_index = labelNames.index(character)
 
-    filepath = temp_path+"/"+character+"/upper_lower.csv"
+    filepath = temp_path+"/"+character+"/deleted.csv"
     (data, labels) = manipulator.load_az_dataset(datasetPath=filepath, flipped=flip_invert_images)
 
     character_size = len(str(labels.size))
@@ -53,20 +50,21 @@ for character in labelNames:
 
     num_unique_values = len(set(labels))
 
-    guesses = reader.read_batch(data)
-
     index = 0
     for rawImage in data:
         image = (rawImage * 255).astype("uint8")
         image = cv2.merge([image] * 3)
         image = cv2.resize(image, (32, 32), interpolation=cv2.INTER_LINEAR)
 
-        filepath = temp_path+"/"+ character + "/"
+        filepath = temp_path+"/"+ character + "/deleted/"
+
+        if os.path.exists(filepath) == False:
+            os.mkdir(filepath)
 
         guess_letter_index = expected_letter_index = int(labels[index])
-        guess = labelNames[guess_letter_index]
+        guess = expected_letter = labelNames[guess_letter_index]
         if (num_unique_values == 1 and guess_letter_index > 9) or force_guess == True:
-            guess = guesses[index]
+            guess = reader.read(data[np.newaxis, index])
             guess_letter_index = labelNames.index(guess)
             print("current index: "+ str(index) + " of character: " + character)
 
@@ -74,13 +72,12 @@ for character in labelNames:
         if guess_letter_index < labelNames.index("A") and guess == character:
             filepath += "number/"
         # check if guess matches the desired character (uppercase only)
-        elif guess == character and guess_letter_index < labelNames.index("a"):
+        elif guess == character:
             filepath += "uppercase/"
         # check if the guess is in the lowercase range and if it matches the desired letter
         elif guess_letter_index > labelNames.index("Z") and (labelNames[guess_letter_index - 26]) == character:
             filepath += "lowercase/"
         else:
-            print("guess: " + guess)
             filepath += "unknown/"
 
         # seperate guessed letter with lable description in case of misguessed/mislabeled characters

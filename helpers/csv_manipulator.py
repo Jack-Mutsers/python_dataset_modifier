@@ -23,7 +23,10 @@ def write_csv(filename, row_list, filepath = "output"):
 	if os.path.exists(filepath) is False:
 		os.makedirs(filepath)
 
-	filepath += "/" + filename
+	if filepath[-1] != "/" or filepath[-1] != "\\":
+		filepath += "/"
+		
+	filepath += filename
 
 	with open(filepath, 'w', newline='') as outfile:
 		file_writer = csv.writer(outfile)

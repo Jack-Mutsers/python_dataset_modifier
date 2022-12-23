@@ -3,12 +3,12 @@ from glob import glob
 import random
 import os
 
-new_filename = "emnist-byclass-train-trimmed.csv"
+new_filename = "emnist-letters-train-trimmed-letters-only.csv"
 shuffle = True
 remove_records = True
-start_character = "0"
+start_character = "A"
 end_character = "Z"
-
+starting_index = 1
 
 labelNames = "0123456789"
 labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -30,28 +30,58 @@ def retreve_records():
 
         print(character)
 
-        records = manipulator.read_csv(filename="upper_lower.csv", filepath="temp/"+character+"/")
+        collection[character] = manipulator.read_csv(filename="upper_lower.csv", filepath="temp/"+character+"/")
 
-        collection[character] = records.copy()
-    
     return collection
 
-def retreve_indexes(files):
-    index_numbers = []
-    for filepath in files:
-        filename = filepath.split("\\")[-1]
-        filename = filename.split(".")[0]
-        index_numbers.append(int(filename))
+def update_labels(collection):
+    for character in labelNames:
+        character_index = labelNames.index(character)
 
-    return index_numbers
+        # skip characters until desired character is reached
+        if character_index < labelNames.index(start_character):
+            continue
 
-def find_missing_indexes(remaining_index_numbers, total_rows):
-    missing_indexes = []
-    for i in range(1, total_rows):
-        if i not in remaining_index_numbers:
-            missing_indexes.append(i)
+        # stop looping when numbers and all letters have been ran
+        if character_index > labelNames.index(end_character):
+            break
+
+        print(character)
+
+        path = "temp/"+character+"/"
+
+        if os.path.exists(path) is False:
+            continue
+        
+        lowercase_files = glob(path+'lowercase/*.png')
+        uppercase_files = glob(path+'uppercase/*.png')
+        image_files = lowercase_files + uppercase_files
+        for file_directory in image_files:
+            filepath = file_directory.replace("/", "\\") # make path seperator universal
+            upper_lower = filepath.split("\\")[-2] # contains uppercase or lowercase
+
+            filename = filepath.split("\\")[-1] # contains the filename like 00001.png
+
+            record_index = int(filename.split(".")[0]) - starting_index # retreves the array index number from the file name
+
+            record = collection[character][record_index]
+
+            # get index of target letter
+            new_label = character_index
+
+            # if image is lowecase raise lable value by 26
+            if upper_lower == "lowercase" and new_label < labelNames.index("a"):
+                new_label += 26
+            elif upper_lower == "uppercase" and new_label > labelNames.index("Z"):
+                new_label -= 26
+
+            # update label value of record
+            record[0] = str(new_label)
+
+            # overwrite existing record in list with updated record
+            collection[character][record_index] = record
     
-    return missing_indexes
+    return collection
 
 def move_transfer_items(collection):
     for character in labelNames:
@@ -75,11 +105,12 @@ def move_transfer_items(collection):
         
         lowercase_files = glob(path+'*/*/*.png')
         for filepath in lowercase_files:
-            target_letter = filepath.split("\\")[-3]
-            upper_lower = filepath.split("\\")[-2]
+            target_letter = filepath.split("\\")[-3] # new Letter to be assigned
+            upper_lower = filepath.split("\\")[-2] # contains uppercase or lowercase
 
-            record_index = filepath.split("\\")[-1]
-            record_index = int(record_index.split(".")[0]) - 1
+            filename = filepath.split("\\")[-1] # contains the filename like 00001.png
+
+            record_index = int(filename.split(".")[0]) - starting_index # get row index number
 
             record = collection[currentLetter][record_index]
 
@@ -100,57 +131,28 @@ def move_transfer_items(collection):
     
     return collection
 
-def update_labels(collection):
-    for character in labelNames:
-        character_index = labelNames.index(character)
-        currentLetter = character
+def retreve_remaining_indexes(files):
+    index_numbers = []
+    for filepath in files:
+        filename = filepath.split("\\")[-1] # get file name like 00001.png
+        fileindex = filename.split(".")[0] # get file index like 00001
+        index_numbers.append(int(fileindex) - starting_index)
 
-        # skip characters until desired character is reached
-        if character_index < labelNames.index(start_character):
-            continue
+    return index_numbers
 
-        # stop looping when numbers and all letters have been ran
-        if character_index > labelNames.index(end_character):
-            break
+def find_missing_indexes(remaining_index_numbers, total_rows):
+    missing_indexes = []
 
-        print(currentLetter)
-
-        path = "temp/"+currentLetter+"/"
-
-        if os.path.exists(path) is False:
-            continue
-        
-        image_files = glob(path+'*/*.png')
-        for filepath in image_files:
-            upper_lower = filepath.split("\\")[-2]
-
-            record_index = filepath.split("\\")[-1]
-            record_index = int(record_index.split(".")[0]) - 1
-
-            record = collection[currentLetter][record_index]
-
-            # get index of target letter
-            new_label = character_index
-
-            # if image is lowecase raise lable value by 26
-            if upper_lower == "lowercase" and new_label <= labelNames.index("Z"):
-                new_label += 26
-            elif upper_lower == "uppercase" and new_label > labelNames.index("Z"):
-                new_label -= 26
-
-            # update label value of record
-            record[0] = str(new_label)
-
-            # overwrite existing record in list with updated record
-            collection[currentLetter][record_index] = record
+    for i in range(0, total_rows):
+        if i not in remaining_index_numbers:
+            missing_indexes.append(i)
     
-    return collection
+    return missing_indexes
 
 def remove_bad_records(collection):
     total = 0
     for character in labelNames:
         character_index = labelNames.index(character)
-        currentLetter = character
 
         # skip characters until desired character is reached
         if character_index < labelNames.index(start_character):
@@ -160,25 +162,39 @@ def remove_bad_records(collection):
         if character_index > labelNames.index(end_character):
             break
 
-        print(currentLetter)
+        print(character)
 
-        path = "temp/"+currentLetter+"/"
-        upper_lower_files = glob(path+'*/*.png')
+        deletedRecords = []
+        deletedRecordIndexes = []
+
+        path = "temp/"+character+"/"
+        uppercase_files = glob(path+'uppercase/*.png')
+        lowercase_files = glob(path+'lowercase/*.png')
         transfer_files = glob(path+'transfer/*/*/*.png')
-        files = upper_lower_files + transfer_files
+        files = uppercase_files + lowercase_files + transfer_files
 
-        remaining_index_numbers = retreve_indexes(files)
-        missing_indexes = find_missing_indexes(remaining_index_numbers, len(collection[currentLetter]))
+        remaining_index_numbers = retreve_remaining_indexes(files)
+        missing_indexes = find_missing_indexes(remaining_index_numbers, len(collection[character]))
 
         # remove highest index first to prevent row shifting when removing rows
         missing_indexes.sort(reverse=True)
 
-        before = len(collection[currentLetter])
+        before = len(collection[character])
 
         for remove_index in missing_indexes:
-            del collection[currentLetter][remove_index]
+            # del collection[currentLetter][remove_index]
+            deletedRecords.append(collection[character][remove_index])
+            deletedRecordIndexes.append([str(remove_index)])
+            collection[character][remove_index] = []
 
-        after = len(collection[currentLetter])
+        tmpList = [x for x in collection[character] if x != []]
+        collection[character] = tmpList
+
+        # manipulator.write_csv("deleted.csv", deletedRecords, path)
+        # manipulator.write_csv("deletedIndexes.csv", deletedRecordIndexes, path)
+        # manipulator.write_csv("upper_lower2.csv", collection[character], path)
+
+        after = len(collection[character])
         removed = before - after
         total += removed
 
@@ -208,7 +224,7 @@ if remove_records:
     filtered_collection = remove_bad_records(restructured_collection)
     updated_row_list = merge_letter_lists(filtered_collection)
 else:
-    updated_row_list = merge_letter_lists(collection)
+    updated_row_list = merge_letter_lists(relabled_collection)
 
 print("writing new CSV file")
 manipulator.write_csv(new_filename, updated_row_list)

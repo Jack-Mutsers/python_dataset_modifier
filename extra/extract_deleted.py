@@ -1,9 +1,13 @@
+import os,sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0,parentdir) 
 
 import helpers.csv_manipulator as manipulator
 import helpers.ocr_handwriting as reader
 import numpy as np
 import cv2
-import os
+# import os
 
 temp_path = "temp"
 flip_invert_images = True
@@ -21,7 +25,7 @@ for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("V"):
+    if character_index < labelNames.index("A"):
         continue
 
     # stop looping when numbers and all letters have been ran
@@ -34,6 +38,9 @@ for character in labelNames:
 
     filepath = temp_path+"/"+character+"/deleted.csv"
     (data, labels) = manipulator.load_az_dataset(datasetPath=filepath, flipped=flip_invert_images)
+    
+    indexfilepath = temp_path+"/"+character+"/"
+    indexes = manipulator.read_csv(filename="deletedIndexes.csv", filepath=indexfilepath)
 
     character_size = len(str(labels.size))
 
@@ -90,7 +97,8 @@ for character in labelNames:
         if os.path.exists(filepath) is False:
             os.makedirs(filepath)
 
-        newname = str(index).zfill(character_size)
+        # newname = str(index).zfill(character_size)
+        newname = indexes[index][0]
         filename = filepath + newname + ".png"
         cv2.imwrite(filename, image)
         index += 1

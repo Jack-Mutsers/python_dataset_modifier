@@ -108,7 +108,12 @@ def take_screenshot_of_window(tab_number):
     delete_path = delete_path.replace(currentLetter, currentLetter + "/delete") + "/"
 
     if os.path.exists(delete_path) is False:
-        os.mkdir(delete_path)
+        delete_path = delete_path.replace("/", "\\")
+        temp_path = ""
+        for segment in delete_path.split("\\"):
+            temp_path += segment + "\\"
+            if os.path.exists(temp_path) is False:
+                os.mkdir(temp_path)
 
     filepath = delete_path + "." + fileName
 
@@ -151,7 +156,12 @@ def remove_selected_files():
         delete_path = path.replace(currentLetter, currentLetter + "\\delete") + "\\"
 
         if os.path.exists(delete_path) is False:
-            os.mkdir(delete_path)
+            delete_path = delete_path.replace("/", "\\")
+            temp_path = ""
+            for segment in delete_path.split("\\"):
+                temp_path += segment + "\\"
+                if os.path.exists(temp_path) is False:
+                    os.mkdir(temp_path)
 
         shutil.move(filepath, delete_path + filename)
 
@@ -305,17 +315,17 @@ for character in labelNames:
     currentLetter = character
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("U"):
+    if character_index < labelNames.index("Q"):
         continue
 
     # stop looping when numbers and all letters have been ran
-    if character_index > labelNames.index("Z"):
+    if character_index > labelNames.index("Q"):
         break
 
     search_dir = "temp/"+character+"/"
     folder_names = [name for name in os.listdir(search_dir) if os.path.isdir(os.path.join(search_dir, name))]
 
-    create_delete_folders(search_dir + "delete" + "/", character_index)
+    # create_delete_folders(search_dir + "delete" + "/", character_index)
 
     scanFolder(folder_names, search_dir)
 

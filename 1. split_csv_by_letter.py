@@ -1,8 +1,9 @@
 import helpers.csv_manipulator as manipulator
 
 # filename = "emnist-letters-train-lowercase.csv"
-filename = "emnist-byclass-train-test.csv"
-label_offset = 0 # this is the ammount that the label value has to be raised to match the correct value for my model
+# filename = "emnist-byclass-train-trimmed-letters-only.csv"
+filename = "typed_letters_sm.csv"
+label_offset = 0 # this is the amount that the label value has to be raised to match the correct value for my model
 
 labelNames = "0123456789"
 labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

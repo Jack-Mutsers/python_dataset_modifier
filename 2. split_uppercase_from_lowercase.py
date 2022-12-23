@@ -1,14 +1,18 @@
 
 from helpers import csv_manipulator as manipulator
-from helpers import ocr_handwriting as reader
 import numpy as np
 import cv2
 import os
 
 temp_path = "temp"
-flip_invert_images = True
-force_guess = True
+flip_invert_images = False
+allow_guesses = False
+force_guess = False
 model_path = r"models/handwriting-lowercase-5-11-2022.model"
+startCharacter = "I"
+endCharacter = "J"
+lableOffset = 0
+extract_file = "upper_lower.csv"
 
 labelNames = "0123456789"
 labelNames += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -18,24 +22,27 @@ labelNames = [l for l in labelNames]
 if os.path.exists(temp_path) is False:
     os.makedirs(temp_path)
 
-reader.set_model(model_path)
+
+if allow_guesses:
+    from helpers import ocr_handwriting as reader
+    reader.set_model(model_path)
 
 for character in labelNames:
     character_index = labelNames.index(character)
 
     # skip characters until desired character is reached
-    if character_index < labelNames.index("0"):
+    if character_index < labelNames.index(startCharacter):
         continue
 
     # stop looping when numbers and all letters have been ran
-    if character_index > labelNames.index("Z"):
+    if character_index > labelNames.index(endCharacter):
         break
 
     print("current character: " + character)
 
     character_index = labelNames.index(character)
 
-    filepath = temp_path+"/"+character+"/upper_lower.csv"
+    filepath = temp_path+"/"+character+"/" + extract_file
     (data, labels) = manipulator.load_az_dataset(datasetPath=filepath, flipped=flip_invert_images)
 
     character_size = len(str(labels.size))
@@ -52,8 +59,10 @@ for character in labelNames:
     data /= 255.0
 
     num_unique_values = len(set(labels))
-
-    guesses = reader.read_batch(data)
+    
+    guesses = []
+    if (num_unique_values == 1 or force_guess == True) and allow_guesses == True:
+        guesses = reader.read_batch(data)
 
     index = 0
     for rawImage in data:
@@ -63,9 +72,9 @@ for character in labelNames:
 
         filepath = temp_path+"/"+ character + "/"
 
-        guess_letter_index = expected_letter_index = int(labels[index])
+        guess_letter_index = expected_letter_index = int(labels[index]) + lableOffset
         guess = labelNames[guess_letter_index]
-        if (num_unique_values == 1 and guess_letter_index > 9) or force_guess == True:
+        if ((num_unique_values == 1 and guess_letter_index > 9) or force_guess == True) and allow_guesses == True:
             guess = guesses[index]
             guess_letter_index = labelNames.index(guess)
             print("current index: "+ str(index) + " of character: " + character)
@@ -84,7 +93,7 @@ for character in labelNames:
             filepath += "unknown/"
 
         # seperate guessed letter with lable description in case of misguessed/mislabeled characters
-        if (num_unique_values == 1 and guess_letter_index > 9) or force_guess == True:
+        if ((num_unique_values == 1 and guess_letter_index > 9) or force_guess == True) and allow_guesses == True:
             if expected_letter_index > labelNames.index("Z"):
                 filepath += "labeled_lowercase/"
             else:

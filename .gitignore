@@ -3,3 +3,5 @@ __pycache__
 *.csv
 models/temp/*
 models/test/*
+back-up/*
+letter_cropper/dataset
